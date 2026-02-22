@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevOps Vulnerability Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    function tailwindScript() {
+      tailwind.config = { content: ["*"], darkMode: 'class' }
+    }
+  </script>
+  <style>
+    .severity-critical { @apply bg-red-600 text-white; }
+    .severity-high { @apply bg-orange-600 text-white; }
+    .severity-medium { @apply bg-yellow-500 text-white; }
+    .severity-low { @apply bg-blue-600 text-white; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+  <div class="max-w-7xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-4xl font-bold">🔍 DevOps Vulnerability Dashboard</h1>
+        <p class="text-gray-400">Powered by Trivy • Alpine • Continuous scans every 5 min</p>
+      </div>
+      <div id="last-update" class="text-sm text-gray-400"></div>
+    </div>
+
+    <div id="stats" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8"></div>
+
+    <div class="mb-4 flex gap-4">
+      <input id="search" type="text" placeholder="Filter images or CVEs..." 
+             class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500">
+      <button onclick="refreshData()" 
+              class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-medium">Refresh Now</button>
+    </div>
+
+    <div class="bg-gray-900 rounded-xl overflow-hidden border border-gray-800">
+      <table class="w-full">
+        <thead class="bg-gray-950">
+          <tr>
+            <th class="px-6 py-4 text-left">Image : Tag</th>
+            <th class="px-6 py-4 text-center">Total</th>
+            <th class="px-6 py-4 text-center">Critical</th>
+            <th class="px-6 py-4 text-center">High</th>
+            <th class="px-6 py-4 text-center">Medium</th>
+            <th class="px-6 py-4 text-center">Low</th>
+            <th class="px-6 py-4 text-right">Last Scan</th>
+          </tr>
+        </thead>
+        <tbody id="image-table" class="divide-y divide-gray-800"></tbody>
+      </table>
+    </div>
+
+    <div id="details-panel" class="hidden mt-8 bg-gray-900 rounded-xl p-6 border border-gray-800">
+      <h2 id="details-title" class="text-2xl font-semibold mb-4"></h2>
+      <div class="overflow-auto max-h-96">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-950 sticky top-0">
+            <tr>
+              <th class="px-4 py-2 text-left">CVE</th>
+              <th class="px-4 py-2 text-left">Package</th>
+              <th class="px-4 py-2 text-left">Installed</th>
+              <th class="px-4 py-2 text-left">Fixed Version</th>
+              <th class="px-4 py-2 text-center">Severity</th>
+              <th class="px-4 py-2 text-left">Description</th>
+            </tr>
+          </thead>
+          <tbody id="vuln-table" class="divide-y divide-gray-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentReport = null;
+    let currentImageIndex = -1;
+
+    async function loadData() {
+      try {
+        const res = await fetch('/report.json?t=' + Date.now());
+        currentReport = await res.json();
+        renderSummary();
+        renderTable();
+        document.getElementById('last-update').textContent = 
+          `Last updated: ${new Date(currentReport.last_update).toLocaleString()}`;
+      } catch(e) { console.error(e); }
+    }
+
+    function renderSummary() {
+      let totalCrit = 0, totalHigh = 0;
+      currentReport.images.forEach(img => {
+        totalCrit += img.counts.CRITICAL || 0;
+        totalHigh += img.counts.HIGH || 0;
+      });
+      const html = `
+        <div class="bg-gray-900 p-4 rounded-xl border border-red-900">
+          <div class="text-red-400 text-3xl font-bold">${totalCrit}</div>
+          <div class="text-sm text-gray-400">Total Critical</div>
+        </div>
+        <div class="bg-gray-900 p-4 rounded-xl border border-orange-900">
+          <div class="text-orange-400 text-3xl font-bold">${totalHigh}</div>
+          <div class="text-sm text-gray-400">Total High</div>
+        </div>
+        <div class="bg-gray-900 p-4 rounded-xl border border-gray-700">
+          <div class="text-3xl font-bold">${currentReport.images.length}</div>
+          <div class="text-sm text-gray-400">Images Monitored</div>
+        </div>
+      `;
+      document.getElementById('stats').innerHTML = html;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('image-table');
+      const filter = document.getElementById('search').value.toLowerCase();
+      let html = '';
+      currentReport.images.forEach((img, idx) => {
+        const match = img.full_name.toLowerCase().includes(filter) ||
+                      img.vulnerabilities.some(v => v.cve.toLowerCase().includes(filter));
+        if (!match && filter) return;
+
+        html += `
+          <tr onclick="showDetails(${idx})" class="hover:bg-gray-800 cursor-pointer">
+            <td class="px-6 py-4 font-mono">${img.name}<span class="text-gray-500">: ${img.tag}</span></td>
+            <td class="px-6 py-4 text-center font-semibold">${img.total_vulns}</td>
+            <td class="px-6 py-4 text-center">
+              <span class="severity-critical px-3 py-1 text-xs rounded font-medium">${img.counts.CRITICAL || 0}</span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="severity-high px-3 py-1 text-xs rounded font-medium">${img.counts.HIGH || 0}</span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="severity-medium px-3 py-1 text-xs rounded font-medium">${img.counts.MEDIUM || 0}</span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="severity-low px-3 py-1 text-xs rounded font-medium">${img.counts.LOW || 0}</span>
+            </td>
+            <td class="px-6 py-4 text-right text-xs text-gray-500">${new Date(img.last_scan).toLocaleString()}</td>
+          </tr>`;
+      });
+      tbody.innerHTML = html || `<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">No images match filter</td></tr>`;
+    }
+
+    function showDetails(idx) {
+      currentImageIndex = idx;
+      const img = currentReport.images[idx];
+      document.getElementById('details-title').textContent = `${img.name}:${img.tag} — ${img.total_vulns} vulnerabilities`;
+      const tbody = document.getElementById('vuln-table');
+      let html = '';
+      img.vulnerabilities.forEach(v => {
+        const sevClass = `severity-${v.severity.toLowerCase()}`;
+        html += `
+          <tr>
+            <td class="px-4 py-3"><a href="${v.url}" target="_blank" class="text-blue-400 hover:underline">${v.cve}</a></td>
+            <td class="px-4 py-3 font-mono">${v.package}</td>
+            <td class="px-4 py-3 font-mono">${v.installed_version}</td>
+            <td class="px-4 py-3 font-mono ${v.fixed_version.includes('No fix') ? 'text-red-400' : 'text-green-400'}">${v.fixed_version}</td>
+            <td class="px-4 py-3 text-center"><span class="${sevClass} px-3 py-1 text-xs rounded font-medium">${v.severity}</span></td>
+            <td class="px-4 py-3 text-sm text-gray-400">${v.description.substring(0, 120)}...</td>
+          </tr>`;
+      });
+      tbody.innerHTML = html;
+      document.getElementById('details-panel').classList.remove('hidden');
+      window.scrollTo({top: document.getElementById('details-panel').offsetTop - 100, behavior: 'smooth'});
+    }
+
+    function refreshData() {
+      loadData();
+    }
+
+    // Auto refresh every 60s + live search
+    document.getElementById('search').addEventListener('input', () => renderTable());
+    setInterval(() => { if (currentReport) loadData(); }, 60000);
+    loadData();  // initial load
+  </script>
+</body>
+</html>

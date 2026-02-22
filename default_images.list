@@ -1,0 +1,5 @@
+nginx:latest
+alpine:latest
+redis:7-alpine
+ubuntu:24.04
+# Add your local images here (e.g. myapp:prod) or Docker Hub images
