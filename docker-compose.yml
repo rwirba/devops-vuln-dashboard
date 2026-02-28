@@ -1,13 +1,47 @@
-version: '3.9'
+# LOCAL BUILD
+
+# services:
+#   dashboard:
+#     build: .
+#     ports:
+#       - "8080:80"
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock:ro   # Required for local image scans
+#       - trivy_cache:/root/.cache/trivy                 # Trivy DB cache (fast subsequent scans)
+#       - dashboard_data:/data  
+#     environment:
+#       - DOCKERHUB_NAMESPACE=ryanandevlab                               # Persistent scan list + reports
+#       - DOCKERHUB_USERNAME=ryanandevlab          # your username
+#       - DOCKERHUB_TOKEN=dckr_pat_ZKyH4Se9u3zYxqYIImVH-YPSic8
+#     restart: unless-stopped
+
+# volumes:
+#   trivy_cache:
+#   dashboard_data:
+
+
+# WHEN USING GITHUB ACTION
 services:
   dashboard:
-    build: .
+    image: ryanandevlab/devops-vuln-dashboard:latest
+    # OR use a specific tag if you want reproducibility:
+    # image: ryanandevlab/devops-vuln-dashboard:abcdef123  (commit SHA or semantic version)
+
     ports:
       - "8080:80"
+
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro   # Required for local image scans
-      - trivy_cache:/root/.cache/trivy                 # Trivy DB cache (fast subsequent scans)
-      - dashboard_data:/data                           # Persistent scan list + reports
+      - /var/run/docker.sock:/var/run/docker.sock:ro     # still needed if you want to scan local images
+      - trivy_cache:/root/.cache/trivy                   # Trivy DB cache
+      - dashboard_data:/data                             # persistent images.list + reports
+
+    environment:
+      # These are still useful if fetch_and_scan.sh needs them
+      - DOCKERHUB_NAMESPACE=ryanandevlab
+      # Remove DOCKERHUB_USERNAME and DOCKERHUB_TOKEN from here
+      # → they are only needed during build (in GitHub Actions), not at runtime
+      # If fetch_and_scan.sh requires auth at runtime → keep them, but better to use a read-only PAT
+
     restart: unless-stopped
 
 volumes:

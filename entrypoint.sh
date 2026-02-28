@@ -2,9 +2,6 @@
 set -e
 
 mkdir -p /data/scans /usr/share/nginx/html
-if [ ! -f /data/images.list ]; then
-    cp /app/default_images.list /data/images.list
-fi
 if [ ! -f /data/report.json ]; then
     echo '{"images":[],"last_update":"Never"}' > /data/report.json
 fi
