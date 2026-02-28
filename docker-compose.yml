@@ -3,7 +3,7 @@
 
 services:
   dashboard:
-    image: ryanandevlab/devops-vuln-dashboard:latest
+    image: ryandevlab/devops-vuln-dashboard:latest
     # OR use a specific tag if you want reproducibility:
     # image: ryanandevlab/devops-vuln-dashboard:abcdef123  (commit SHA or semantic version)
 
@@ -17,7 +17,7 @@ services:
 
     environment:
       # These are still useful if fetch_and_scan.sh needs them
-      - DOCKERHUB_NAMESPACE=ryanandevlab
+      - DOCKERHUB_NAMESPACE=ryandevlab
       # Remove DOCKERHUB_USERNAME and DOCKERHUB_TOKEN from here
       # → they are only needed during build (in GitHub Actions), not at runtime
       # If fetch_and_scan.sh requires auth at runtime → keep them, but better to use a read-only PAT
