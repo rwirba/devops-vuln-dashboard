@@ -35,7 +35,7 @@ jobs:
           file: ./Dockerfile
           push: true                  # actually push after build
           tags: |
-            ryanandevlab/devops-vuln-dashboard:latest
-            ryanandevlab/devops-vuln-dashboard:${{ github.sha }}  # optional: tag with commit SHA
+            ryandevlab/devops-vuln-dashboard:latest
+            ryandevlab/devops-vuln-dashboard:${{ github.sha }}  # optional: tag with commit SHA
           cache-from: type=gha        # use GitHub Actions cache for faster builds
           cache-to: type=gha,mode=max
