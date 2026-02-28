@@ -12,7 +12,7 @@
 #     environment:
 #       - DOCKERHUB_NAMESPACE=ryanandevlab                               # Persistent scan list + reports
 #       - DOCKERHUB_USERNAME=ryanandevlab          # your username
-#       - DOCKERHUB_TOKEN=dckr_pat_ZKyH4Se9u3zYxqYIImVH-YPSic8
+#       - DOCKERHUB_TOKEN=xxxxxxxxxxxxx
 #     restart: unless-stopped
 
 # volumes:
