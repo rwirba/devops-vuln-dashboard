@@ -1,26 +1,6 @@
-# LOCAL BUILD
-
-# services:
-#   dashboard:
-#     build: .
-#     ports:
-#       - "8080:80"
-#     volumes:
-#       - /var/run/docker.sock:/var/run/docker.sock:ro   # Required for local image scans
-#       - trivy_cache:/root/.cache/trivy                 # Trivy DB cache (fast subsequent scans)
-#       - dashboard_data:/data  
-#     environment:
-#       - DOCKERHUB_NAMESPACE=ryanandevlab                               # Persistent scan list + reports
-#       - DOCKERHUB_USERNAME=ryanandevlab          # your username
-#       - DOCKERHUB_TOKEN=xxxxxxxxxxxxx
-#     restart: unless-stopped
-
-# volumes:
-#   trivy_cache:
-#   dashboard_data:
 
 
-# WHEN USING GITHUB ACTION
+
 services:
   dashboard:
     image: ryanandevlab/devops-vuln-dashboard:latest
